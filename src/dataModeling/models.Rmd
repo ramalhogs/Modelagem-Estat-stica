@@ -1,0 +1,93 @@
+---
+title: "Modelagem Estatística"
+author: "Gustavo Ramalho"
+date: "2024-06-01"
+output: html_document
+---
+
+
+
+```{r}
+#library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(lme4)
+library(caret)
+library(MuMIn)
+library(Metrics)
+```
+
+Em um primeiro momento, vamos realizar testes com um modelo linear simples. Depois, iremos passar para uma abordagem multinível.
+
+```{r}
+df <- read_csv("../../data/processed_data/processed_data.csv")
+
+#modelo linear simples
+simple_model <- lm(Value ~ ano + mes_7_diff + mes_8_diff + mes_6_PRCP + mes_7_PRCP, data = df)
+
+summary(simple_model)
+
+aic_value <- AIC(simple_model)
+bic_value <- BIC(simple_model)
+
+print(paste("AIC:", aic_value))
+print(paste("BIC:", bic_value))
+
+predicted_values <- predict(simple_model, df)
+mse_value <- mse(df$Value, predicted_values)
+
+print(paste("Erro Quadrático Médio (EQM):", mse_value))
+```
+
+Agora vamos testar modelagens multiníveis. Vamos considerar primeiro com intercepto variável, onde testaremos com estados e depois com anos.
+
+
+```{r}
+# Modelo multinível com interceptos variáveis por estado
+multilevel_model <- lmer(Value ~ ano + mes_7_diff + mes_8_diff + mes_6_PRCP + mes_7_PRCP + (1 | State), data = df)
+
+
+summary(multilevel_model)
+
+aic_value <- AIC(multilevel_model)
+bic_value <- BIC(multilevel_model)
+
+
+print(paste("AIC:", aic_value))
+print(paste("BIC:", bic_value))
+
+predicted_values <- predict(multilevel_model, df)  # `re.form=NA` para usar apenas os efeitos fixos para previsões
+mse_value <- mse(df$Value, predicted_values)
+
+
+print(paste("Erro Quadrático Médio (EQM):", mse_value))
+
+```
+
+Tivemos resultados interessantes, e é possível notar que colocar interceptos variáveis por estado melhora as nossas métricas.
+
+
+```{r}
+# Modelo multinível com interceptos variáveis por ano
+multilevel_model <- lmer(Value ~ State + mes_7_diff + mes_8_diff + mes_6_PRCP + mes_7_PRCP + (1 | ano), data = df)
+
+# Exibir o resumo do modelo
+summary(multilevel_model)
+
+aic_value <- AIC(multilevel_model)
+bic_value <- BIC(multilevel_model)
+
+# Exibir os valores de AIC e BIC
+print(paste("AIC:", aic_value))
+print(paste("BIC:", bic_value))
+
+predicted_values <- predict(multilevel_model, df) 
+mse_value <- mse(df$Value, predicted_values)
+
+# Exibir o valor do EQM
+print(paste("Erro Quadrático Médio (EQM):", mse_value))
+
+```
+Aqui, temos um resultado ainda melhor que o modelo anterior. É possível notar que o efeito temporal é ainda mais impactante que o efeito estadual nos dados.
+
