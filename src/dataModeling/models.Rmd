@@ -24,7 +24,7 @@ Em um primeiro momento, vamos realizar testes com um modelo linear simples. Depo
 df <- read_csv("../../data/processed_data/processed_data.csv")
 
 #modelo linear simples
-simple_model <- lm(Value ~ ano + mes_7_diff + mes_8_diff + mes_6_PRCP + mes_7_PRCP, data = df)
+simple_model <- lm(Value ~ mes_7_diff + mes_8_diff + mes_6_PRCP + mes_7_PRCP, data = df)
 
 summary(simple_model)
 
@@ -91,3 +91,24 @@ print(paste("Erro Quadrático Médio (EQM):", mse_value))
 ```
 Aqui, temos um resultado ainda melhor que o modelo anterior. É possível notar que o efeito temporal é ainda mais impactante que o efeito estadual nos dados.
 
+```{r}
+# Modelo com menos coeficientes variáveis
+multilevel_model_coef_var <- lmer(Value ~ State + (mes_7_diff + mes_7_PRCP + mes_8_diff + mes_6_PRCP | ano), data = df)
+
+
+# Exibir o resumo do modelo
+summary(multilevel_model_coef_var)
+
+# Calcular e exibir AIC e BIC
+aic_value_coef_var <- AIC(multilevel_model_coef_var)
+bic_value_coef_var <- BIC(multilevel_model_coef_var)
+print(paste("AIC:", aic_value_coef_var))
+print(paste("BIC:", bic_value_coef_var))
+
+# Predições e cálculo do EQM
+predicted_values_coef_var <- predict(multilevel_model_coef_var, df) 
+mse_value_coef_var <- mse(df$Value, predicted_values_coef_var)
+
+# Exibir o valor do EQM
+print(paste("Erro Quadrático Médio (EQM):", mse_value_coef_var))
+```
