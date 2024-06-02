@@ -14,8 +14,9 @@ library(dplyr)
 library(readr)
 library(lme4)
 library(caret)
+library(Matrix)
 library(MuMIn)
-library(Metrics)
+library(performance)
 ```
 
 Em um primeiro momento, vamos realizar testes com um modelo linear simples. Depois, iremos passar para uma abordagem multinível.
@@ -24,7 +25,7 @@ Em um primeiro momento, vamos realizar testes com um modelo linear simples. Depo
 df <- read_csv("../../data/processed_data/processed_data.csv")
 
 #modelo linear simples
-simple_model <- lm(Value ~ mes_7_diff + mes_8_diff + mes_6_PRCP + mes_7_PRCP, data = df)
+simple_model <- lm(Value ~ ano + mes_7_diff + mes_8_diff + mes_6_PRCP + mes_7_PRCP, data = df)
 
 summary(simple_model)
 
@@ -63,6 +64,11 @@ mse_value <- mse(df$Value, predicted_values)
 
 print(paste("Erro Quadrático Médio (EQM):", mse_value))
 
+r2_results <- r2(multilevel_model)
+
+# Exibir os valores de R^2
+print(paste("R^2 Marginal:", r2_results))
+
 ```
 
 Tivemos resultados interessantes, e é possível notar que colocar interceptos variáveis por estado melhora as nossas métricas.
@@ -88,12 +94,17 @@ mse_value <- mse(df$Value, predicted_values)
 # Exibir o valor do EQM
 print(paste("Erro Quadrático Médio (EQM):", mse_value))
 
+r2_results <- r2(multilevel_model)
+
+# Exibir os valores de R^2
+print(paste("R^2 Marginal:", r2_results))
+print(paste("R^2 Condicional:", r2_results$r2c))
 ```
 Aqui, temos um resultado ainda melhor que o modelo anterior. É possível notar que o efeito temporal é ainda mais impactante que o efeito estadual nos dados.
 
 ```{r}
 # Modelo com menos coeficientes variáveis
-multilevel_model_coef_var <- lmer(Value ~ State + (mes_7_diff + mes_7_PRCP + mes_8_diff + mes_6_PRCP | ano), data = df)
+multilevel_model_coef_var <- lmer(Value ~ State + mes_7_TMAX + mes_7_PRCP + mes_8_diff + mes_6_PRCP + (mes_7_PRCP + mes_7_TMAX | ano), data = df)
 
 
 # Exibir o resumo do modelo
@@ -111,4 +122,9 @@ mse_value_coef_var <- mse(df$Value, predicted_values_coef_var)
 
 # Exibir o valor do EQM
 print(paste("Erro Quadrático Médio (EQM):", mse_value_coef_var))
+
+r2_results <- r2(multilevel_model_coef_var)
+
+# Exibir os valores de R^2
+print(paste("R^2 Marginal:", r2_results))
 ```
