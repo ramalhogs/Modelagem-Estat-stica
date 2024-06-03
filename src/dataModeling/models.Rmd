@@ -17,6 +17,7 @@ library(caret)
 library(Matrix)
 library(MuMIn)
 library(performance)
+
 ```
 
 Em um primeiro momento, vamos realizar testes com um modelo linear simples. Depois, iremos passar para uma abordagem multinível.
@@ -58,7 +59,7 @@ bic_value <- BIC(multilevel_model)
 print(paste("AIC:", aic_value))
 print(paste("BIC:", bic_value))
 
-predicted_values <- predict(multilevel_model, df)  # `re.form=NA` para usar apenas os efeitos fixos para previsões
+predicted_values <- predict(multilevel_model, df)
 mse_value <- mse(df$Value, predicted_values)
 
 
@@ -66,8 +67,25 @@ print(paste("Erro Quadrático Médio (EQM):", mse_value))
 
 r2_results <- r2(multilevel_model)
 
-# Exibir os valores de R^2
+
 print(paste("R^2 Marginal:", r2_results))
+
+
+
+estados_interesse <- tolower(c("ARKANSAS", "COLORADO", "IOWA", "ILLINOIS", "INDIANA", 
+                               "KANSAS", "KENTUCKY", "MICHIGAN", "MINNESOTA", "MISSOURI", 
+                               "NORTH DAKOTA", "NEBRASKA", "OHIO", "PENNSYLVANIA", 
+                               "SOUTH DAKOTA", "TENNESSEE", "TEXAS", "WISCONSIN"))
+
+# Garantir que a coluna State está em minúsculas
+interceptos_estado$State <- tolower(interceptos_estado$State)
+
+# Filtrar os interceptos para os estados de interesse
+interceptos_filtrados <- interceptos_estado %>%
+  filter(State %in% estados_interesse)
+
+# Salvar os interceptos filtrados em um arquivo CSV
+write.csv(interceptos_filtrados, "interceptos_estados.csv", row.names = FALSE)
 
 ```
 
@@ -78,7 +96,6 @@ Tivemos resultados interessantes, e é possível notar que colocar interceptos v
 # Modelo multinível com interceptos variáveis por ano
 multilevel_model <- lmer(Value ~ State + mes_7_diff + mes_8_diff + mes_6_PRCP + mes_7_PRCP + (1 | ano), data = df)
 
-# Exibir o resumo do modelo
 summary(multilevel_model)
 
 aic_value <- AIC(multilevel_model)
@@ -91,23 +108,35 @@ print(paste("BIC:", bic_value))
 predicted_values <- predict(multilevel_model, df) 
 mse_value <- mse(df$Value, predicted_values)
 
-# Exibir o valor do EQM
 print(paste("Erro Quadrático Médio (EQM):", mse_value))
+
+
+random_effects <- ranef(multilevel_model)$ano
+interceptos_ano <- data.frame(ano = as.numeric(rownames(random_effects)), intercepto = random_effects[, "(Intercept)"])
+
+
+ggplot(interceptos_ano, aes(x = ano, y = intercepto)) +
+  geom_line(group = 1, colour = "blue") +
+  geom_point(colour = "red") +
+  scale_x_continuous(breaks = seq(min(interceptos_ano$ano), max(interceptos_ano$ano), by = 10)) +
+  labs(title = "Variação do Intercepto por Ano",
+       x = "Ano",
+       y = "Intercepto",
+       subtitle = "Efeito aleatório do ano no modelo") +
+  theme_minimal()
 
 r2_results <- r2(multilevel_model)
 
-# Exibir os valores de R^2
+
 print(paste("R^2 Marginal:", r2_results))
 print(paste("R^2 Condicional:", r2_results$r2c))
 ```
 Aqui, temos um resultado ainda melhor que o modelo anterior. É possível notar que o efeito temporal é ainda mais impactante que o efeito estadual nos dados.
 
 ```{r}
-# Modelo com menos coeficientes variáveis
-multilevel_model_coef_var <- lmer(Value ~ State + mes_7_TMAX + mes_7_PRCP + mes_8_diff + mes_6_PRCP + (mes_7_PRCP + mes_7_TMAX | ano), data = df)
 
+multilevel_model_coef_var <- lmer(Value ~ State + mes_7_PRCP + mes_7_diff + mes_8_diff + mes_6_PRCP + (mes_7_diff + mes_7_PRCP | ano), data = df)
 
-# Exibir o resumo do modelo
 summary(multilevel_model_coef_var)
 
 # Calcular e exibir AIC e BIC
@@ -116,15 +145,13 @@ bic_value_coef_var <- BIC(multilevel_model_coef_var)
 print(paste("AIC:", aic_value_coef_var))
 print(paste("BIC:", bic_value_coef_var))
 
-# Predições e cálculo do EQM
+
 predicted_values_coef_var <- predict(multilevel_model_coef_var, df) 
 mse_value_coef_var <- mse(df$Value, predicted_values_coef_var)
 
-# Exibir o valor do EQM
 print(paste("Erro Quadrático Médio (EQM):", mse_value_coef_var))
 
 r2_results <- r2(multilevel_model_coef_var)
 
-# Exibir os valores de R^2
 print(paste("R^2 Marginal:", r2_results))
 ```
