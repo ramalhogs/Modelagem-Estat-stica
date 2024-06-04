@@ -71,20 +71,22 @@ r2_results <- r2(multilevel_model)
 print(paste("R^2 Marginal:", r2_results))
 
 
+random_effects <- ranef(multilevel_model)$State
+
+
+interceptos_estado <- data.frame(State = rownames(random_effects), Intercept = random_effects[, "(Intercept)"])
+interceptos_estado$State <- tolower(interceptos_estado$State)
 
 estados_interesse <- tolower(c("ARKANSAS", "COLORADO", "IOWA", "ILLINOIS", "INDIANA", 
                                "KANSAS", "KENTUCKY", "MICHIGAN", "MINNESOTA", "MISSOURI", 
                                "NORTH DAKOTA", "NEBRASKA", "OHIO", "PENNSYLVANIA", 
                                "SOUTH DAKOTA", "TENNESSEE", "TEXAS", "WISCONSIN"))
 
-# Garantir que a coluna State está em minúsculas
-interceptos_estado$State <- tolower(interceptos_estado$State)
 
-# Filtrar os interceptos para os estados de interesse
 interceptos_filtrados <- interceptos_estado %>%
   filter(State %in% estados_interesse)
 
-# Salvar os interceptos filtrados em um arquivo CSV
+# salvando para conseguir fazer o plot com python...
 write.csv(interceptos_filtrados, "interceptos_estados.csv", row.names = FALSE)
 
 ```
@@ -155,3 +157,5 @@ r2_results <- r2(multilevel_model_coef_var)
 
 print(paste("R^2 Marginal:", r2_results))
 ```
+
+Por fim, testamos com intercepto aleatório (ano) e coeficientes aleatórios nas variáveis climáticas do mês 7. Os resultados foram melhores e uma discussão mais detalhada está registrada no relatório.
